@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './home.scss';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ReactPhotoSphereViewer, MarkersPlugin, CompassPlugin, AutorotatePlugin  } from 'react-photo-sphere-viewer';
 import { panoViews, panoRoutes } from './const'; // 导入所有图片
-import _ from 'lodash';
 import arrow from '../../assets/icon/arrow.gif';
 import map from '../../assets/map/map.jpg';
 
@@ -263,7 +262,7 @@ export default function Home() {
         viewerInstance.current.removeEventListener('click', handleClick);
       }
     }
-  }, [isAddMarker, isAltPressed, altMarkerId]);
+  }, [isAddMarker, isAltPressed, altMarkerId, handleClick]);
 
   const [isMapView, setIsMapView] = useState(true);
   const audioRef = React.useRef(null);
@@ -300,7 +299,7 @@ export default function Home() {
   return (
     <div className='rpsv'>
         <div className="map-container" style={{right: isMapView ? '60px' : '-300px', overflow: 'hidden'}}>
-            <img className='map-bg' src={map}/>
+            <img className='map-bg' src={map} alt="map"/>
             {
                 panoRoutes.map(v => <Tooltip title={panoViews[v].title} placement="top">
                         <div key={v} className="map-point" style={{

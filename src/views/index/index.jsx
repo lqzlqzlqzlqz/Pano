@@ -7,7 +7,7 @@ export default function Index() {
     if(location.pathname === "/"){
       navigate("/home?scene_id=rukou");
     }
-  },[location.pathname]);
+  },[location.pathname, navigate]);
 
   return (
     <div>
