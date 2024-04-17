@@ -6,6 +6,7 @@ import router from './router/index';
 import { RouterProvider } from 'react-router-dom';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+localStorage.setItem('autoplayAllowed', 'true');
 root.render(
   <React.StrictMode>
     <RouterProvider router={router}>

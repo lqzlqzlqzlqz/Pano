@@ -1,8 +1,9 @@
-import {createBrowserRouter} from 'react-router-dom';
+import {createHashRouter} from 'react-router-dom';
 import Home from '../views/home/home';
 import Index from '../views/index/index';
+import Test from '../views/test/test';
 
-const router = createBrowserRouter([
+const router = createHashRouter([
     {
         path: '/',
         element: <Index />,
@@ -11,7 +12,11 @@ const router = createBrowserRouter([
                 path: '/home',
                 element: <Home />
             }
-        ]
+        ],
+    },
+    {
+        path: '/test',
+        element: <Test />
     }
 ]);
 export default router;

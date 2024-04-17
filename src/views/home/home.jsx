@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './home.scss';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ReactPhotoSphereViewer, MarkersPlugin, CompassPlugin, AutorotatePlugin  } from 'react-photo-sphere-viewer';
+import { ReactPhotoSphereViewer, MarkersPlugin, AutorotatePlugin  } from 'react-photo-sphere-viewer';
 import { panoViews, panoRoutes } from './const'; // 导入所有图片
 import arrow from '../../assets/icon/arrow.gif';
 import map from '../../assets/map/map.jpg';
@@ -15,7 +15,12 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
-import { LocationOn, LocationOff, Edit, EditOff, MusicNote, MusicOff } from '@mui/icons-material';
+import Fade from '@mui/material/Fade';
+
+import { LocationOn, LocationOff, Edit, EditOff, MusicNote, MusicOff, Microsoft, ScreenShare } from '@mui/icons-material';
+
+import QRCode from 'qrcode.react';
+import VisualAngle from './components/visualAngle';
 
 export default function Home() {
   const location = useLocation();
@@ -25,6 +30,8 @@ export default function Home() {
 
   const [markerDetailPopImgSrc, setMarkerDetailPopImgSrc] = useState("");
   const [isMarkerDetailPopOpen, setIsMarkerDetailPopOpen] = useState(false);
+
+  const url = window.location.href;
 
   const handleMarkerDetailPopClose = () => {
     setIsMarkerDetailPopOpen(false);
@@ -106,14 +113,14 @@ export default function Home() {
             markers: [],
         },
       ],
-      [CompassPlugin, {
-        hotspots: [
-          { yaw: '0deg' },
-          { yaw: '90deg' },
-          { yaw: '180deg' },
-          { yaw: '270deg' },
-        ],
-      }],
+      // [CompassPlugin, {
+      //   hotspots: [
+      //     { yaw: '0deg' },
+      //     { yaw: '90deg' },
+      //     { yaw: '180deg' },
+      //     { yaw: '270deg' },
+      //   ],
+      // }],
       [
         AutorotatePlugin,
         {
@@ -205,6 +212,7 @@ export default function Home() {
         const markersPlugs = viewerRef.current?.getPlugin(MarkersPlugin);
         if (!markersPlugs)  return;
         markersPlugs.addMarker(newMarker);
+        console.log(newMarker);
         handleAddMarkerFormClose();
     }
 
@@ -216,8 +224,14 @@ export default function Home() {
       const markersPlugs = viewerRef.current?.getPlugin(MarkersPlugin);
       if (!markersPlugs)  return;
       const markerConfig = markersPlugs.getMarker(altMarkerId);
-      markerConfig.config.tooltip.content = formJson.tooltip;
+      if(formJson.tooltip) {
+        markerConfig.config.tooltip.content = formJson.tooltip;
+      } else {
+        markerConfig.config.tooltip = undefined;
+      }
+      markerConfig.config.pop = formJson.pop;
       markersPlugs.updateMarker(markerConfig.config);
+      console.log(markerConfig.config);
       setAltMarkerId('');
       setIsAddMarkerGraphFormOpen(false);
     }
@@ -269,15 +283,17 @@ export default function Home() {
   const [isPlay, setIsPlay] = useState(false);
   useEffect(() => {
     const playAudio = async () => {
-      if (audioRef.current) {
-        try {
-          if(isPlay) {
-            await audioRef.current.play();
-          } else {
-            await audioRef.current.pause();
+      if(localStorage.getItem('autoplayAllowed') === 'true') {
+        if (audioRef.current) {
+          try {
+            if(isPlay) {
+              await audioRef.current.play();
+            } else {
+              await audioRef.current.pause();
+            }
+          } catch (error) {
+            console.error("Audio play failed", error);
           }
-        } catch (error) {
-          console.error("Audio play failed", error);
         }
       }
     };
@@ -296,6 +312,59 @@ export default function Home() {
     'autorotate', 'zoom', 'fullscreen',
   ];
 
+  // 显示场景选择
+  const [isSceneSelect, setIsSceneSelect] = useState(true);
+  const handleChangeIsSceneSelect = () => {
+    setIsSceneSelect(i => !i);
+  }
+
+  // 分享链接
+  const [isShare, setIsShare] = useState(false);
+  const handleToShare = () => {
+    setIsShare(true);
+  }
+  const handleToCloseShare = () => {
+    setIsShare(false);
+  }
+
+  const [angle, setAngle] = useState(0);
+  const [isSetAngle, setIsSetAngle] = useState(false);
+  function degreesToRadians(degrees) {
+    return degrees * (Math.PI / 180);
+  }
+  function radiansToDegrees(radians) {
+    return radians * (180 / Math.PI);
+  }
+  
+  useEffect(() => {
+    let animationFrameId;
+  
+    const updateAngle = () => {
+      if (viewerInstance.current) {
+        const degrees = viewerInstance.current.getPosition();
+        const newAngle = radiansToDegrees(degrees.yaw);
+        // 只有当角度变化足够大时才更新
+        if (Math.abs(angle - newAngle) > 0.1) {
+          setAngle(newAngle);
+        }
+      }
+      animationFrameId = requestAnimationFrame(updateAngle);
+    };
+  
+    animationFrameId = requestAnimationFrame(updateAngle);
+
+    if(viewerRef.current && isSetAngle) {
+      viewerRef.current.animate({
+        yaw: degreesToRadians(angle),
+        pitch: viewerRef.current?.getPosition()?.pitch ?? 0 
+      });
+    }
+  
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [angle, isSetAngle]);
+  
   return (
     <div className='rpsv'>
         <div className="map-container" style={{right: isMapView ? '60px' : '-300px', overflow: 'hidden'}}>
@@ -310,13 +379,14 @@ export default function Home() {
                     </Tooltip>
                 )
             }
+            <VisualAngle bottom={`calc(${panoViews[sceneId].position.bottom} - 65px)`} left={`calc(${panoViews[sceneId].position.left})`} angle={angle} setAngle={setAngle} setIsSetAngle={setIsSetAngle} />
         </div>
         <div className='side-btns'>
-          <IconButton aria-label="edit" onClick={(a) => {
+          {/* <IconButton aria-label="edit" onClick={(a) => {
             setIsAddMarker(a => !a);
           }}>
             {isAddMarker ? <EditOff/> : <Edit />}
-          </IconButton>
+          </IconButton> */}
           <IconButton aria-label="map" onClick={(a) => {
             setIsMapView(v => !v);
           }}>
@@ -327,24 +397,35 @@ export default function Home() {
           }}>
             {isPlay ? <MusicNote /> : <MusicOff/>}
           </IconButton>
+          <IconButton aria-label="yard" onClick={handleChangeIsSceneSelect}>
+            <Microsoft />
+          </IconButton>
+          <IconButton aria-label="yard" onClick={handleToShare}>
+            <ScreenShare />
+          </IconButton>
         </div>
         <audio ref={audioRef}  controls="controls" style={{display: 'none'}}>
-          <source  src="https://bpic.588ku.com/music/yinyue/water/30f99a96-660e-4bf1-b423-34296b0fe858.mp3" />
+          <source  src="https://bpic.588ku.com/music/yinyue/water/30f99a96-660e-4bf1-b423-34296b0fe858.mp3" autoPlay/>
           Your browser does not support the audio element.
         </audio>
-        <div className="image-scroll-container" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
-          {panoRoutes.map((v, index) => (
-            <Tooltip key={v} title={panoViews[v].title} placement="top">
-              <div style={{padding: 3, background: sceneId === v ? '#F6B64C' : 'white', cursor: 'pointer'}} onClick={() => goToScene(v)}>
-                <img
-                  src={panoViews[v].thumb}
-                  alt={panoViews[v].title}
-                  style={{ width: '100px', height: 'auto', display: 'block' }}
-                />
-              </div>
-            </Tooltip>
-          ))}
-        </div>
+        <Fade in={isSceneSelect}>
+          <div className="image-scroll-container" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
+            <div className='image-container'>
+              {panoRoutes.map((v, index) => (
+                <Tooltip key={v} title={panoViews[v].title} placement="top">
+                  <div style={{padding: 3, margin: '3 0', background: sceneId === v ? '#F6B64C' : 'white', cursor: 'pointer', position: 'relative'}} onClick={() => goToScene(v)}>
+                    <img
+                      src={panoViews[v].thumb}
+                      alt={panoViews[v].title}
+                      style={{ width: '86px', height: 'auto', display: 'block' }}
+                    />
+                    <div className='title'>{panoViews[v].title}</div>
+                  </div>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+        </Fade>
         <ReactPhotoSphereViewer 
             key={imageSrc}
             src={imageSrc}
@@ -411,11 +492,21 @@ export default function Home() {
             </DialogContentText>
             <TextField
                 autoFocus
-                required
+                
                 margin="dense"
                 id="提示"
                 name="tooltip"
                 label="提示"
+                fullWidth
+                variant="standard"
+            />
+            <TextField
+                autoFocus
+                required
+                margin="dense"
+                id="pop"
+                name="pop"
+                label="配图"
                 fullWidth
                 variant="standard"
             />
@@ -430,6 +521,21 @@ export default function Home() {
           onClose={handleMarkerDetailPopClose}
         >
           <img src={markerDetailPopImgSrc} style={{zIndex: 120, width: 500}} alt="" />
+        </Dialog>
+        <Dialog
+          open={isShare}
+          onClose={handleToCloseShare}
+        >
+          <DialogTitle>使用手机扫描二维码, 分享你的全景</DialogTitle>
+          <DialogContent>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <QRCode size={230} value={url} />
+            </div>
+          </DialogContent>
         </Dialog>
     </div>
   );

@@ -17,6 +17,7 @@
             background-color: rgb(0, 115, 255);
             border-radius: 50%;
             cursor: pointer;
+            z-index: 250;
         }
     }
     .side-btns {
@@ -25,14 +26,13 @@
         right: 5px;
         width: 40px;
         height: 200px;
-        z-index: 100;
+        z-index: 250;
         button {
             background-color: rgba(128, 128, 128, 0.5);
             margin-bottom: 15px;
         }
     }
     .image-scroll-container {
-        gap: 5px;
         display: flex;
         justify-content: center;
         background-color: rgba(128, 128, 128, 0.5);
@@ -40,5 +40,34 @@
         bottom: 100px;
         width: 100%;
         z-index: 100;
+        padding: 10px 0;
+        .image-container {
+            gap: 10px;
+            display: flex;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: start;
+            -ms-flex-pack: start;
+            justify-content: flex-start;
+            -webkit-box-align: start;
+            -ms-flex-align: start;
+            align-items: flex-start;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+            overflow: hidden;
+            .title {
+                position: absolute;
+                background-color: rgba(128, 128, 128, 0.5);
+                bottom: 3px;
+                font-size: 12px;
+                color: white;
+                width: calc(100% - 6px);
+                text-align: center;
+                left: 3px;
+            }
+        }
     }
 }
